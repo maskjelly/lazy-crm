@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "postinstall": "prisma generate",
     "build": "NEXT_PUBLIC_ESLINT_IGNORE=true next build",
     "start": "next start",
     "lint": "next lint"
