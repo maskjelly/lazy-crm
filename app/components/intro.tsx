@@ -2,6 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 const Hero1 = () => {
   return (
@@ -31,10 +32,12 @@ const Hero1 = () => {
             work in sync without wasting times on meetings
           </span>
         </p>
-        <div  className="flex flex-wrap justify-center gap-5 mt-8">
-          <button className="bg-gray-800 text-white px-6 py-2 rounded-xl hover:ring-1 ring-gray-800 hover:ring-offset-1 duration-300">
-            Get Started
-          </button>
+        <div className="flex flex-wrap justify-center gap-5 mt-8">
+          <Link href="/dashboard">
+            <button className="bg-gray-800 text-white px-6 py-2 rounded-xl hover:ring-1 ring-gray-800 hover:ring-offset-1 duration-300">
+              Dashboard
+            </button>
+          </Link>
           <button className="border border-gray-200 text-gray-800 px-6 py-2 rounded-xl hover:bg-gray-200 duration-300 hover:ring-1 ring-gray-300 hover:ring-offset-1">
             Learn More
           </button>
