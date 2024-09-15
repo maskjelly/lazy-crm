@@ -51,7 +51,7 @@ export default async function Home() {
             <p>No projects found</p>
           ) : (
             <ul>
-              {projectPolk.map((project) => (
+              {projectPolk.map(project => (
                 <li key={project.id}>{project.name}</li>
               ))}
             </ul>

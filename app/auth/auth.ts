@@ -1,6 +1,7 @@
 import GoogleProvider from "next-auth/providers/google";
 import prisma from "@/app/db";
 import { JWT } from "next-auth/jwt";
+import { Session } from "next-auth";
 
 interface PrismaUser {
   id: string;
@@ -60,7 +61,6 @@ export const NEXT_AUTH = {
     },
 
     // Handling session object
-    //@typescript-eslint/no-explicit-any
     session: async ({ session, token }: any) => {
       if (session.user) {
         session.user.id = token.uid; // Add user ID to the session

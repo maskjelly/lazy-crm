@@ -31,7 +31,7 @@ const Hero1 = () => {
             work in sync without wasting times on meetings
           </span>
         </p>
-        <div className="flex flex-wrap justify-center gap-5 mt-8">
+        <div  className="flex flex-wrap justify-center gap-5 mt-8">
           <button className="bg-gray-800 text-white px-6 py-2 rounded-xl hover:ring-1 ring-gray-800 hover:ring-offset-1 duration-300">
             Get Started
           </button>
