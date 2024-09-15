@@ -4,7 +4,6 @@ import { NEXT_AUTH } from "../auth/auth";
 
 export async function ProjectMaker(projectname: string) {
   const session = await getServerSession(NEXT_AUTH);
-  const userid = session.user.id;
   if (!session?.user?.id || !session.user.email) {
     throw new Error("User not authenticated or session not found");
   }
