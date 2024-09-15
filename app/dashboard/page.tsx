@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { NEXT_AUTH } from "../auth/auth";
 import prisma from "../db";
+import { Project } from '../types/Project'; // Adjust the import path as needed
 
 export default async function Home() {
   // Fetch session data
@@ -51,7 +52,7 @@ export default async function Home() {
             <p>No projects found</p>
           ) : (
             <ul>
-              {projectPolk.map(project => (
+              {projectPolk.map((project: Project) => (
                 <li key={project.id}>{project.name}</li>
               ))}
             </ul>
