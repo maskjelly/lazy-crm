@@ -9,7 +9,7 @@ export default async function DashboardPage() {
 
   // Check if session is valid
   if (!session?.user?.email) {
-    return <div>No session found. Please log in.</div>;
+    return <div>No session found. Please log    in.</div>;
   }
 
   // Fetch user data from Prisma
