@@ -1,9 +1,5 @@
-import { Appbar } from "./components/appbar";
-
+import Hero1 from "./components/intro";
 
 export default function Home() {
-
-  return (
-    <Appbar/>
-  );
+  return <Hero1 />;
 }

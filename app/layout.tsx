@@ -34,7 +34,7 @@ export default function RootLayout({
       
         <Provider>
 
-        
+        <Appbar/>
         {children}
         </Provider>
       </body>

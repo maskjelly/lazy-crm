@@ -1,7 +1,5 @@
 import GoogleProvider from "next-auth/providers/google";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import prisma from "@/app/db";
 
 export const NEXT_AUTH = {
   providers: [
