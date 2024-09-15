@@ -1,27 +1,10 @@
 import GoogleProvider from "next-auth/providers/google";
 import prisma from "@/app/db";
-import { JWT } from "next-auth/jwt";
-import { Session } from "next-auth";
+import { User as NextAuthUser } from "next-auth";
+import { AdapterUser } from "next-auth/adapters";
 
-interface PrismaUser {
-  id: string;
-  email: string;
-  name: string;
-  image?: string;
-}
+// Remove the custom User interface
 
-interface User {
-  email: string;
-  name: string;
-  image?: string;
-}
-interface CustomToken extends JWT {
-  uid?: string; // or `number`, depending on your User ID type
-}
-
-interface CustomUser extends PrismaUser {
-  // Define any additional properties if necessary
-}
 export const NEXT_AUTH = {
   providers: [
     GoogleProvider({
@@ -32,38 +15,31 @@ export const NEXT_AUTH = {
   secret: process.env.NEXTAUTH_SECRET,
 
   callbacks: {
-    // Managing the sign-in process
-    async signIn({ user }: { user: User }) {
+    async signIn({ user }: { user: NextAuthUser | AdapterUser }) {
+      if (!user.email) {
+        return false; // Reject sign-in if email is missing
+      }
+
       // Check if the user already exists in the database
       const existingUser = await prisma.user.findUnique({
         where: { email: user.email },
       });
 
       if (!existingUser) {
-        // If user does not exist, create a new user in the database
         await prisma.user.create({
           data: {
             email: user.email,
-            name: user.name,
-            image: user.image,
+            name: user.name || "",
+            image: user.image || null,
           },
         });
       }
-      return true; // Continue with the sign-in
-    },
 
-    // Handling JWT tokens
-    jwt: async ({ token, user }: { token: CustomToken; user?: CustomUser }) => {
-      if (user) {
-        token.uid = user.id; // Store user ID in the token
-      }
-      return token;
+      return true; // Allow sign-in
     },
-
-    // Handling session object
-    session: async ({ session, token }: any) => {
+    async session({ token, session }: any) {
       if (session.user) {
-        session.user.id = token.uid; // Add user ID to the session
+        session.user.id = token.sub;
       }
       return session;
     },
