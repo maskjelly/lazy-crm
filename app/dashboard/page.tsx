@@ -3,7 +3,7 @@ import { NEXT_AUTH } from "../auth/auth";
 import prisma from "../db";
 import { Project } from '../types/Project'; // Adjust the import path as needed
 
-export default async function Home() {
+export default async function DashboardPage() {
   // Fetch session data
   const session = await getServerSession(NEXT_AUTH);
 
@@ -36,29 +36,26 @@ export default async function Home() {
   }
 
   return (
-    <>
-      <div className="flex">
-        <div>This is a dashboard</div>
-        <div className="border-l h-screen mx-4"></div>
-        <div>User name: {user.email || "No user data found"}</div>
-        <div>USER ID: {user.id || "No user data found"}</div>
-        <div>
-          <input type="text" placeholder="Project name" />
-          <button className="border mx-5">Create Project</button>
-        </div>
-        <div>
-          <h3>Projects:</h3>
-          {projectPolk.length === 0 ? (
-            <p>No projects found</p>
-          ) : (
-            <ul>
-              {projectPolk.map((project: Project) => (
-                <li key={project.id}>{project.name}</li>
-              ))}
-            </ul>
-          )}
-        </div>
+    <div className="flex flex-col">
+      <h1>Dashboard</h1>
+      <div>User name: {user.email || "No user data found"}</div>
+      <div>USER ID: {user.id || "No user data found"}</div>
+      <div>
+        <input type="text" placeholder="Project name" />
+        <button className="border mx-5">Create Project</button>
       </div>
-    </>
+      <div>
+        <h3>Projects:</h3>
+        {projectPolk.length === 0 ? (
+          <p>No projects found</p>
+        ) : (
+          <ul>
+            {projectPolk.map((project: Project) => (
+              <li key={project.id}>{project.name}</li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
   );
 }
