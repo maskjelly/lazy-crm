@@ -1,6 +1,14 @@
 import { Card } from "./ui/card";
 
-export const DataCard = ({ Name, id ,email }: { Name: string; id: number ,email : string}) => {
+export const DataCard = ({
+  Name,
+  id,
+  email,
+}: {
+  Name: string;
+  id: number;
+  email: string;
+}) => {
   return (
     <Card title={"Dashboard"}>
       <div className="flex justify-between border-b pb-2">
@@ -20,19 +28,31 @@ export const DataCard = ({ Name, id ,email }: { Name: string; id: number ,email 
 };
 export const Projects = ({ projectNames }: { projectNames: string[] }) => {
   return (
-    <Card title="Projects Dashboard">
-      <div className="flex flex-col space-y-4">
-        {projectNames.length === 0 ? (
-          <p>No projects found</p>
-        ) : (
-          projectNames.map((name, index) => (
-            <div key={index} className="flex justify-between border-b pb-2">
-              <div>Project {index + 1}</div>
-              <div>{name}</div>
-            </div>
-          ))
-        )}
-      </div>
-    </Card>
+    <div>
+      <Card title="Projects Dashboard">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr>
+                <th className="text-left p-2">Project Name</th>
+              </tr>
+            </thead>
+            <tbody>
+              {projectNames.length === 0 ? (
+                <tr>
+                  <td className="p-2">No projects found</td>
+                </tr>
+              ) : (
+                projectNames.map((name, index) => (
+                  <tr key={index} className="border-b">
+                    <td className="p-2">{name}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
   );
 };

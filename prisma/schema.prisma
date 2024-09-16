@@ -15,7 +15,11 @@ model User {
   image    String?    // Nullable, added to store the Google profile image
   projects Projects[]
 }
-
+model Client {
+  id     Int     @id @default(autoincrement())
+  email String @unique
+  
+}
 model Projects {
   id     Int     @id @default(autoincrement())
   name   String
