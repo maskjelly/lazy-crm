@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 interface NotificationProps {
   message: string;
-  type: 'success' | 'error';
+  type: 'success' | 'error';  // Update this line
   isVisible: boolean;
 }
 

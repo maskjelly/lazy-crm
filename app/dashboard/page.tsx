@@ -11,7 +11,7 @@ export default function HOME() {
   const [projectName, setProjectName] = useState("");
   const [projects, setProjects] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [notification, setNotification] = useState({ message: '', type: 'success' as const, isVisible: false });
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error'; isVisible: boolean }>({ message: '', type: 'success', isVisible: false });
 
   useEffect(() => {
     fetchProjects();
