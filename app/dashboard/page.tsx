@@ -1,8 +1,8 @@
 import { getServerSession } from "next-auth";
-import { NEXT_AUTH } from "../auth/auth";
-import prisma from "../db";
-import { Project } from "../types/Project"; // Adjust the import path as needed
-import { DataCard } from "../components/userdata";
+import { NEXT_AUTH } from "@/app/auth/auth";
+import prisma from "@/app/db";
+import { Project } from "@/app/types/Project"; // Adjust the import path as needed
+import { DataCard, Projects } from "@/app/components/userdata";
 
 export default async function DashboardPage() {
   // Fetch session data
@@ -38,22 +38,16 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col">
-      <DataCard Name={user.name} id={user.id} email={user.email}/>
+      <DataCard Name={user.name} id={user.id} email={user.email} />
       <div>
         <input type="text" placeholder="Project name" />
         <button className="border mx-5">Create Project</button>
       </div>
       <div>
         <h3>Projects:</h3>
-        {projectPolk.length === 0 ? (
-          <p>No projects found</p>
-        ) : (
-          <ul>
-            {projectPolk.map((project: Project) => (
-              <li key={project.id}>{project.name}</li>
-            ))}
-          </ul>
-        )}
+        <Projects
+          projectNames={projectPolk.map((project: Project) => project.name)}
+        />
       </div>
     </div>
   );

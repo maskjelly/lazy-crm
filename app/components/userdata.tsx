@@ -18,3 +18,21 @@ export const DataCard = ({ Name, id ,email }: { Name: string; id: number ,email 
     </Card>
   );
 };
+export const Projects = ({ projectNames }: { projectNames: string[] }) => {
+  return (
+    <Card title="Projects Dashboard">
+      <div className="flex flex-col space-y-4">
+        {projectNames.length === 0 ? (
+          <p>No projects found</p>
+        ) : (
+          projectNames.map((name, index) => (
+            <div key={index} className="flex justify-between border-b pb-2">
+              <div>Project {index + 1}</div>
+              <div>{name}</div>
+            </div>
+          ))
+        )}
+      </div>
+    </Card>
+  );
+};
