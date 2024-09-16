@@ -1,5 +1,6 @@
 import { Card } from "./ui/card";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 export const DataCard = ({
   Name,
@@ -51,7 +52,11 @@ export const Projects = ({ projectNames }: { projectNames: string[] }) => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
                 >
-                  <td className="p-2">{name}</td>
+                  <td className="p-2">
+                    <Link href={`/projects/${encodeURIComponent(name)}`} className="hover:text-accent">
+                      {name}
+                    </Link>
+                  </td>
                 </motion.tr>
               ))
             )}
