@@ -4,7 +4,6 @@ import { ProjectMaker } from "@/app/action/makeProject";
 import { useState, FormEvent } from "react";
 import { useSession } from "next-auth/react";
 export default function DashboardPage() {
-  const session = useSession();
   const [projectName, setProjectName] = useState("");
 
   async function handleSubmit(e: FormEvent) {
