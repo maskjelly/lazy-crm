@@ -1,7 +1,8 @@
 import { getServerSession } from "next-auth";
 import { NEXT_AUTH } from "../auth/auth";
 import prisma from "../db";
-import { Project } from '../types/Project'; // Adjust the import path as needed
+import { Project } from "../types/Project"; // Adjust the import path as needed
+import { DataCard } from "../components/userdata";
 
 export default async function DashboardPage() {
   // Fetch session data
@@ -9,7 +10,7 @@ export default async function DashboardPage() {
 
   // Check if session is valid
   if (!session?.user?.email) {
-    return <div>No session found. Please log    in.</div>;
+    return <div>No session found. Please log in.</div>;
   }
 
   // Fetch user data from Prisma
@@ -37,9 +38,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col">
-      <h1>Dashboard</h1>
-      <div>User name: {user.email || "No user data found"}</div>
-      <div>USER ID: {user.id || "No user data found"}</div>
+      <DataCard Name={user.name} id={user.id} email={user.email}/>
       <div>
         <input type="text" placeholder="Project name" />
         <button className="border mx-5">Create Project</button>
