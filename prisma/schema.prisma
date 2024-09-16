@@ -9,17 +9,17 @@ datasource db {
 }
 
 model User {
-  id       Int        @id @default(autoincrement())
+  id       String     @id @default(uuid()) // Change id to String and generate UUID by default
   email    String     @unique
   name     String
-  image    String? // Nullable, added to store the Google profile image
+  image    String?    // Nullable, added to store the Google profile image
   projects Projects[]
 }
 
 model Projects {
   id     Int     @id @default(autoincrement())
   name   String
-  userID Int
+  userID String  // Change userID to String
   User   User    @relation(fields: [userID], references: [id])
   tasks  Tasks[]
 }
