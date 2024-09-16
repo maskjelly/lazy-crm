@@ -1,4 +1,5 @@
 import { Card } from "./ui/card";
+import { motion } from "framer-motion";
 
 export const DataCard = ({
   Name,
@@ -28,31 +29,35 @@ export const DataCard = ({
 };
 export const Projects = ({ projectNames }: { projectNames: string[] }) => {
   return (
-    <div>
-      <Card title="Projects Dashboard">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
+    <Card title="Projects Dashboard">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr>
+              <th className="text-left p-2 border-b border-accent">Project Name</th>
+            </tr>
+          </thead>
+          <tbody>
+            {projectNames.length === 0 ? (
               <tr>
-                <th className="text-left p-2">Project Name</th>
+                <td className="p-2 text-accent">No projects found</td>
               </tr>
-            </thead>
-            <tbody>
-              {projectNames.length === 0 ? (
-                <tr>
-                  <td className="p-2">No projects found</td>
-                </tr>
-              ) : (
-                projectNames.map((name, index) => (
-                  <tr key={index} className="border-b">
-                    <td className="p-2">{name}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-    </div>
+            ) : (
+              projectNames.map((name, index) => (
+                <motion.tr 
+                  key={index} 
+                  className="border-b border-accent"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.1 }}
+                >
+                  <td className="p-2">{name}</td>
+                </motion.tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </Card>
   );
 };
