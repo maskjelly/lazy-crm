@@ -2,7 +2,6 @@
 
 import { ProjectMaker } from "@/app/action/makeProject";
 import { useState, FormEvent } from "react";
-import { useSession } from "next-auth/react";
 export default function DashboardPage() {
   const [projectName, setProjectName] = useState("");
 
