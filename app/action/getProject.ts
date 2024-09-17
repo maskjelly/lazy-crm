@@ -24,8 +24,20 @@ export async function getProjects() {
     },
     select: {
       name: true,
+      tasks: {
+        select: {
+          taskUpdate: true,
+        },
+      },
     },
   });
 
-  return projects;
+  return projects.map(project => ({
+    name: project.name,
+    taskCounts: {
+      done: project.tasks.filter(task => task.taskUpdate === 'Completed').length,
+      working: project.tasks.filter(task => task.taskUpdate === 'Working').length,
+      upcoming: project.tasks.filter(task => task.taskUpdate === 'Pending').length,
+    },
+  }));
 }

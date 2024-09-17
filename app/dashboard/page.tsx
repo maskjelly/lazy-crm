@@ -7,9 +7,18 @@ import { Projects } from "../components/userdata";
 import { Notification } from "../components/Notification";
 import { motion } from "framer-motion";
 
+interface ProjectInfo {
+  name: string;
+  taskCounts: {
+    done: number;
+    working: number;
+    upcoming: number;
+  };
+}
+
 export default function HOME() {
   const [projectName, setProjectName] = useState("");
-  const [projects, setProjects] = useState<string[]>([]);
+  const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error'; isVisible: boolean }>({ message: '', type: 'success', isVisible: false });
 
@@ -21,7 +30,8 @@ export default function HOME() {
     setIsLoading(true);
     try {
       const fetchedProjects = await getProjects();
-      setProjects(fetchedProjects.map(project => project.name));
+      // Assuming getProjects now returns ProjectInfo[]
+      setProjects(fetchedProjects);
     } catch (error) {
       showNotification('Failed to fetch projects', 'error');
     }
@@ -30,9 +40,13 @@ export default function HOME() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!projectName.trim()) {
+      showNotification('Project name cannot be empty', 'error');
+      return;
+    }
     setIsLoading(true);
     try {
-      await ProjectMaker(projectName);
+      await ProjectMaker(projectName.trim());
       setProjectName("");
       await fetchProjects();
       showNotification('Project created successfully', 'success');
@@ -76,7 +90,7 @@ export default function HOME() {
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
         </div>
       ) : (
-        <Projects projectNames={projects} />
+        <Projects projects={projects} />
       )}
 
       <Notification {...notification} />
