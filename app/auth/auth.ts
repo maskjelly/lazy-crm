@@ -15,7 +15,7 @@ export const NEXT_AUTH = {
   secret: process.env.NEXTAUTH_SECRET,
   // Add this line to explicitly set the callback URL
   callbacks: {
-    async redirect({ url, baseUrl }) {
+    async redirect({ baseUrl } : any) {
       return baseUrl;
     },
     async signIn({ user }: { user: NextAuthUser | AdapterUser }) {
