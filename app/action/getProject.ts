@@ -16,7 +16,8 @@ export async function getProjects() {
     });
 
     if (!user) {
-      throw new Error("User not found");
+      console.error("User not found for email:", session.user.email);
+      return []; // Return an empty array instead of throwing an error
     }
 
     const projects = await prisma.projects.findMany({
@@ -43,6 +44,6 @@ export async function getProjects() {
     }));
   } catch (error) {
     console.error("Error in getProjects:", error);
-    throw error;
+    return []; // Return an empty array in case of any error
   }
 }

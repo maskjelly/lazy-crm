@@ -13,8 +13,11 @@ export const NEXT_AUTH = {
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
-
+  // Add this line to explicitly set the callback URL
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      return baseUrl;
+    },
     async signIn({ user }: { user: NextAuthUser | AdapterUser }) {
       if (!user.email) {
         return false; // Reject sign-in if email is missing

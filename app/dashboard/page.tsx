@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 import { useProjectContext } from "../context/ProjectContext";
 import { ProjectsSkeleton } from "../components/Skeleton";
 
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+const CACHE_DURATION = 5 * 60 * 1000;
 
 export default function HOME() {
   const [projectName, setProjectName] = useState("");
@@ -20,7 +20,6 @@ export default function HOME() {
 
   async function fetchProjects(forceRefresh = false) {
     if (!forceRefresh && state.projects.length > 0 && state.lastFetched && Date.now() - state.lastFetched < CACHE_DURATION) {
-      // Use cached projects if they exist and are not expired
       setIsInitialLoading(false);
       return;
     }
@@ -38,7 +37,7 @@ export default function HOME() {
 
   useEffect(() => {
     fetchProjects();
-  }, []); // Empty dependency array to run only on mount
+  }, []);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -50,7 +49,7 @@ export default function HOME() {
     try {
       await ProjectMaker(projectName.trim());
       setProjectName("");
-      await fetchProjects(true); // Force refresh projects after creating a new one
+      await fetchProjects(true);
       showNotification('Project created successfully', 'success');
     } catch (error) {
       showNotification('Failed to create project', 'error');

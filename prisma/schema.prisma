@@ -23,7 +23,7 @@ model Client {
 model Projects {
   id     Int     @id @default(autoincrement())
   name   String
-  userID String  // Change userID to String
+  userID String
   User   User    @relation(fields: [userID], references: [id])
   tasks  Tasks[]
 }
