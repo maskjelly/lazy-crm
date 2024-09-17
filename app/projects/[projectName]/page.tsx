@@ -8,7 +8,7 @@ import { useProjectContext } from "@/app/context/ProjectContext";
 import { useState } from "react";
 import { DeleteConfirmationModal } from "@/app/components/DeleteConfirmationModal";
 import { deleteProject } from "@/app/action/deleteProject";
-import { Trash2 } from 'lucide-react';
+import { Trash2, ChevronDown } from 'lucide-react';
 
 const TaskColumn = ({ title, color }: { title: string; color: string }) => (
   <motion.div
@@ -30,6 +30,7 @@ export default function ProjectPage() {
   const router = useRouter();
   const { state, dispatch } = useProjectContext();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isComboboxOpen, setIsComboboxOpen] = useState(false);
 
   const project = state.projects.find(p => p.name === decodeURIComponent(projectName as string));
 
@@ -48,16 +49,45 @@ export default function ProjectPage() {
     }
   };
 
+  const handleProjectChange = (newProjectName: string) => {
+    router.push(`/projects/${encodeURIComponent(newProjectName)}`);
+    setIsComboboxOpen(false);
+  };
+
   return (
-    <div className="flex flex-col md:flex-row">
-      {/* Sidebar */}
+    <div className="flex flex-col">
+      {/* Mobile Combobox */}
+      <div className="md:hidden mb-4">
+        <div 
+          className="border border-accent rounded-lg p-2 flex justify-between items-center cursor-pointer"
+          onClick={() => setIsComboboxOpen(!isComboboxOpen)}
+        >
+          <span>{project.name}</span>
+          <ChevronDown size={20} className={`transition-transform ${isComboboxOpen ? 'rotate-180' : ''}`} />
+        </div>
+        {isComboboxOpen && (
+          <div className="mt-1 border border-accent rounded-lg bg-background absolute z-10 w-[calc(100%-2rem)]">
+            {state.projects.map((p, index) => (
+              <div 
+                key={index} 
+                className={`p-2 cursor-pointer ${p.name === project.name ? 'bg-accent text-background' : 'hover:bg-accent hover:bg-opacity-10'}`}
+                onClick={() => handleProjectChange(p.name)}
+              >
+                {p.name}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Sidebar */}
       <motion.div
         initial={{ x: -300, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="w-full md:w-64 bg-background border-b md:border-r border-accent p-4 md:h-screen md:overflow-y-auto"
+        className="hidden md:block w-64 bg-background border-r border-accent p-4 h-screen overflow-y-auto fixed left-0 top-0 pt-16"
       >
-        <h2 className="text-lg md:text-xl font-bold mb-4">Projects</h2>
+        <h2 className="text-xl font-bold mb-4">Projects</h2>
         {state.projects.map((p, index) => (
           <Link key={index} href={`/projects/${encodeURIComponent(p.name)}`}>
             <div className={`p-2 rounded-lg mb-2 cursor-pointer ${p.name === project.name ? 'bg-accent text-background' : 'hover:bg-accent hover:bg-opacity-10'}`}>
@@ -72,7 +102,7 @@ export default function ProjectPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="flex-1 p-4"
+        className="flex-1 p-4 md:ml-64"
       >
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6">
           <h1 className="text-xl md:text-2xl font-bold mb-3 md:mb-0">{project.name}</h1>
