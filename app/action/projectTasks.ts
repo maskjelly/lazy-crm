@@ -2,8 +2,9 @@
 
 import prisma from "@/app/db";
 import { TaskStatus } from "@prisma/client";
+import { TaskInfo } from "@/app/types";
 
-export async function addTask(projectId: number, taskDetails: string, taskUpdate: TaskStatus) {
+export async function addTask(projectId: number, taskDetails: string, taskUpdate: TaskStatus): Promise<{ success: true; task: TaskInfo } | { success: false; error: string }> {
   try {
     const newTask = await prisma.tasks.create({
       data: {
@@ -28,6 +29,18 @@ export async function updateTaskStatus(taskId: number, newStatus: TaskStatus) {
     return updatedTask;
   } catch (error) {
     console.error("Error updating task status:", error);
+    throw error;
+  }
+}
+
+export async function deleteTask(taskId: number) {
+  try {
+    await prisma.tasks.delete({
+      where: { id: taskId },
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting task:", error);
     throw error;
   }
 }

@@ -8,30 +8,48 @@ import { useProjectContext } from "@/app/context/ProjectContext";
 import { useState, useEffect } from "react";
 import { DeleteConfirmationModal } from "@/app/components/DeleteConfirmationModal";
 import { deleteProject } from "@/app/action/deleteProject";
-import { Trash2, ChevronDown, PlusCircle } from 'lucide-react';
 import { getProjects } from "@/app/action/getProject";
 import { ProjectsSkeleton } from "@/app/components/Skeleton";
-import { addTask } from "@/app/action/projectTasks";
+import { addTask, deleteTask } from "@/app/action/projectTasks";
 import { AddTaskModal } from "@/app/components/AddTaskModal";
-import { TaskInfo, TaskStatus, ProjectInfo } from "@/app/types";
+import { TaskInfo, TaskStatus } from "@/app/types";
 import { showNotification } from "@/app/utils/notifications";
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { updateTaskStatus } from "@/app/action/projectTasks";
+import { ChevronDown, PlusCircle, Trash2 } from "lucide-react";
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
-function TaskColumn({ title, color, status, tasks }: { 
+function TaskColumn({ title, color, status, tasks, onDeleteTask }: { 
   title: string; 
   color: string; 
   status: TaskStatus; 
   tasks: TaskInfo[]; 
-  project: ProjectInfo;
+  onDeleteTask: (taskId: number) => void;
 }) {
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; taskId: number } | null>(null);
+
+  const handleContextMenu = (e: React.MouseEvent, taskId: number) => {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY, taskId });
+  };
+
+  const handleDeleteTask = (taskId: number) => {
+    onDeleteTask(taskId);
+    setContextMenu(null);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = () => setContextMenu(null);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
   return (
     <div className="flex-1">
       <Card title={title} className="h-full">
         <Droppable droppableId={status}>
-          {(provided) => (
+          {(provided, snapshot) => (
             <div 
               ref={provided.innerRef}
               {...provided.droppableProps}
@@ -49,17 +67,39 @@ function TaskColumn({ title, color, status, tasks }: {
                         className={`mb-2 p-3 bg-black rounded shadow hover:shadow-md transition-shadow ${
                           snapshot.isDragging ? 'opacity-50' : ''
                         }`}
+                        onContextMenu={(e) => handleContextMenu(e, task.id)}
                       >
                         <p className="text-sm font-medium break-words text-white">{task.taskDetails}</p>
                       </div>
                     )}
                   </Draggable>
                 ))}
+              {snapshot.isDraggingOver && (
+                <div className="h-16 border-2 border-dashed border-gray-400 rounded-lg mb-2"></div>
+              )}
               {provided.placeholder}
             </div>
           )}
         </Droppable>
       </Card>
+      {contextMenu && (
+        <div
+          style={{
+            position: 'fixed',
+            top: contextMenu.y,
+            left: contextMenu.x,
+            zIndex: 1000,
+          }}
+          className="bg-white shadow-md rounded-md py-2 px-4"
+        >
+          <button
+            onClick={() => handleDeleteTask(contextMenu.taskId)}
+            className="text-red-500 hover:text-red-700"
+          >
+            Delete Task
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -74,7 +114,7 @@ export default function ProjectPage() {
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
 
   const project = state.projects.find(p => p.name === decodeURIComponent(projectName as string));
-  const tasks = state.tasks.filter(task => task.projectId === project?.id);
+  const tasks = project ? state.tasks.filter(task => task.projectId === project.id) : [];
 
   async function fetchProjects(forceRefresh = false) {
     if (!forceRefresh && state.projects.length > 0 && state.lastFetched && Date.now() - state.lastFetched < CACHE_DURATION) {
@@ -111,7 +151,7 @@ export default function ProjectPage() {
     return () => {
       console.error = originalError;
     };
-  }, []);
+  }, [fetchProjects]);
 
   if (!project && !isInitialLoading) {
     router.push('/dashboard');
@@ -119,7 +159,7 @@ export default function ProjectPage() {
   }
 
   const handleDeleteProject = async () => {
-    if (!project) return; // Add this check
+    if (!project) return;
     try {
       await deleteProject(project.name);
       dispatch({ type: 'CLEAR_CACHE' });
@@ -134,17 +174,71 @@ export default function ProjectPage() {
     setIsComboboxOpen(false);
   };
 
-  async function handleAddTask(taskDetails: string, taskStatus: TaskStatus) {
+  const handleAddTask = async (taskDetails: string, taskStatus: TaskStatus) => {
     if (!project) return;
+    
+    // Optimistically update local state
+    const tempTaskId = Date.now();
+    dispatch({
+      type: 'ADD_TASK',
+      payload: { id: tempTaskId, taskDetails, taskUpdate: taskStatus, projectId: project.id }
+    });
+    dispatch({
+      type: 'UPDATE_PROJECT_TASK_COUNTS',
+      payload: { projectId: project.id, oldStatus: null, newStatus: taskStatus }
+    });
+
     const response = await addTask(project.id, taskDetails, taskStatus);
-    if (response.success) {
+    if (response.success && 'task' in response) {
       setIsAddTaskModalOpen(false);
       showNotification('Task added successfully', 'success');
-      await fetchProjects(true);
+      dispatch({
+        type: 'UPDATE_TASK_ID',
+        payload: { tempId: tempTaskId, realId: response.task.id }
+      });
     } else {
       showNotification(response.error || 'Failed to add task', 'error');
+      dispatch({ type: 'REMOVE_TASK', payload: tempTaskId });
+      dispatch({
+        type: 'UPDATE_PROJECT_TASK_COUNTS',
+        payload: { projectId: project.id, oldStatus: taskStatus, newStatus: null }
+      });
     }
-  }
+  };
+
+  const handleDeleteTask = async (taskId: number) => {
+    if (!project) {
+      console.error("Project not found");
+      showNotification('Failed to delete task: Project not found', 'error');
+      return;
+    }
+
+    const taskToDelete = tasks.find(task => task.id === taskId);
+    if (!taskToDelete) {
+      console.error("Task not found");
+      showNotification('Failed to delete task: Task not found', 'error');
+      return;
+    }
+
+    dispatch({ type: 'REMOVE_TASK', payload: taskId });
+    dispatch({
+      type: 'UPDATE_PROJECT_TASK_COUNTS',
+      payload: { projectId: project.id, oldStatus: taskToDelete.taskUpdate, newStatus: null }
+    });
+
+    try {
+      await deleteTask(taskId);
+      showNotification('Task deleted successfully', 'success');
+    } catch (error) {
+      console.error("Failed to delete task:", error);
+      showNotification('Failed to delete task', 'error');
+      dispatch({ type: 'ADD_TASK', payload: taskToDelete });
+      dispatch({
+        type: 'UPDATE_PROJECT_TASK_COUNTS',
+        payload: { projectId: project.id, oldStatus: null, newStatus: taskToDelete.taskUpdate }
+      });
+    }
+  };
 
   const onDragEnd = async (result: { destination: any; source: any; draggableId: any; }) => {
     const { destination, source, draggableId } = result;
@@ -162,32 +256,33 @@ export default function ProjectPage() {
 
     const taskId = parseInt(draggableId);
     const newStatus = destination.droppableId as TaskStatus;
+    const oldStatus = source.droppableId as TaskStatus;
+
+    // Immediately update the UI
+    dispatch({
+      type: 'UPDATE_TASK',
+      payload: { taskId, newStatus }
+    });
 
     try {
-      const updatedTask = await updateTaskStatus(taskId, newStatus);
-      if (updatedTask) {
-        const updatedTasks = state.tasks.map(task =>
-          task.id === taskId ? { ...task, taskUpdate: newStatus } : task
-        );
-        dispatch({ type: 'SET_TASKS', payload: updatedTasks });
-        
-        // Update project task counts
-        const updatedProjects = state.projects.map(p => {
-          if (p.id === project?.id) {
-            const taskCounts = { ...p.taskCounts };
-            const sourceStatus = source.droppableId.toLowerCase() as keyof typeof taskCounts;
-            const destinationStatus = destination.droppableId.toLowerCase() as keyof typeof taskCounts;
-            taskCounts[sourceStatus] -= 1;
-            taskCounts[destinationStatus] += 1;
-            return { ...p, taskCounts };
-          }
-          return p;
-        });
-        dispatch({ type: 'SET_PROJECTS', payload: updatedProjects });
-      }
+      await updateTaskStatus(taskId, newStatus);
+      dispatch({
+        type: 'UPDATE_PROJECT_TASK_COUNTS',
+        payload: { projectId: project!.id, oldStatus, newStatus }
+      });
     } catch (error) {
       console.error("Failed to update task status:", error);
       showNotification('Failed to update task status', 'error');
+      
+      // Revert the changes in case of failure
+      dispatch({
+        type: 'UPDATE_TASK',
+        payload: { taskId, newStatus: oldStatus }
+      });
+      dispatch({
+        type: 'UPDATE_PROJECT_TASK_COUNTS',
+        payload: { projectId: project!.id, oldStatus: newStatus, newStatus: oldStatus }
+      });
     }
   };
 
@@ -196,7 +291,11 @@ export default function ProjectPage() {
   }
 
   if (!project) {
-    return <div>Project not found</div>; // Add this check
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <p>Project not found. Redirecting to dashboard...</p>
+      </div>
+    );
   }
 
   return (
@@ -274,25 +373,25 @@ export default function ProjectPage() {
         <DragDropContext onDragEnd={onDragEnd}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <TaskColumn 
-              title={`Done (${project.taskCounts.done})`} 
+              title="Done" 
               color="bg-green-500 bg-opacity-20" 
               status="Completed" 
-              project={project}
-              tasks={project.tasks}
+              tasks={tasks}
+              onDeleteTask={handleDeleteTask}
             />
             <TaskColumn 
-              title={`Working (${project.taskCounts.working})`} 
+              title="Working" 
               color="bg-yellow-500 bg-opacity-20" 
               status="Working" 
               tasks={tasks}
-              project={project}
+              onDeleteTask={handleDeleteTask}
             />
             <TaskColumn 
-              title={`Upcoming (${project.taskCounts.upcoming})`} 
+              title="Upcoming" 
               color="bg-red-500 bg-opacity-20" 
               status="Pending" 
               tasks={tasks}
-              project={project}
+              onDeleteTask={handleDeleteTask}
             />
           </div>
         </DragDropContext>
