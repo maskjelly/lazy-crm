@@ -20,10 +20,13 @@ const Hero1 = () => {
         </p>
         <h1 className="text-2xl md:text-3xl lg:text-5xl font-bold mb-3 md:mb-4">
           By Freelancers{" "}
-          <span className="block text-accent mt-1 md:mt-2">For Freelancers</span>
+          <span className="block text-accent mt-1 md:mt-2">
+            For Freelancers
+          </span>
         </h1>
         <p className="text-sm md:text-base mb-6 md:mb-8">
-          Let your clients see your progress on their product without wasting their time.
+          Let your clients see your progress on their product without wasting
+          their time.
           <span className="block mt-2">
             Interactive element of response which allows clients and freelancers
             work in sync without wasting time on meetings
@@ -33,7 +36,11 @@ const Hero1 = () => {
           <Link href="/dashboard" className="w-full sm:w-auto">
             <button className="btn btn-primary w-full">Dashboard</button>
           </Link>
-          <button className="btn btn-secondary w-full sm:w-auto">Learn More</button>
+          <Link href="/user" className="w-full sm:w-auto">
+            <button className="btn btn-secondary w-full sm:w-auto">
+              Learn More
+            </button>
+          </Link>
         </div>
       </motion.div>
     </section>
