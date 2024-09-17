@@ -8,14 +8,31 @@ import { Notification } from "../components/Notification";
 import { motion } from "framer-motion";
 import { useProjectContext } from "../context/ProjectContext";
 
+// Updated skeleton component for both mobile and desktop
+const ProjectSkeleton = () => (
+  <div className="animate-pulse space-y-4">
+    {[...Array(3)].map((_, index) => (
+      <div key={index} className="bg-accent bg-opacity-20 rounded-lg p-4">
+        <div className="h-5 bg-accent bg-opacity-30 rounded w-3/4 mb-2"></div>
+        <div className="space-y-2">
+          <div className="h-4 bg-accent bg-opacity-30 rounded w-1/4"></div>
+          <div className="h-4 bg-accent bg-opacity-30 rounded w-1/4"></div>
+          <div className="h-4 bg-accent bg-opacity-30 rounded w-1/4"></div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
 export default function HOME() {
   const [projectName, setProjectName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error'; isVisible: boolean }>({ message: '', type: 'success', isVisible: false });
   const { state, dispatch } = useProjectContext();
 
   async function fetchProjects() {
-    setIsLoading(true);
+    setIsFetching(true);
     try {
       const fetchedProjects = await getProjects();
       dispatch({ type: 'SET_PROJECTS', payload: fetchedProjects });
@@ -23,8 +40,9 @@ export default function HOME() {
       console.error("Error fetching projects:", error);
       showNotification('Failed to fetch projects', 'error');
     }
-    setIsLoading(false);
+    setIsFetching(false);
   }
+
   useEffect(() => {
     if (state.projects.length === 0 || Date.now() - (state.lastFetched || 0) > 5 * 60 * 1000) {
       fetchProjects();
@@ -78,10 +96,8 @@ export default function HOME() {
         </div>
       </form>
 
-      {isLoading ? (
-        <div className="flex justify-center items-center h-40">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-accent"></div>
-        </div>
+      {isFetching ? (
+        <ProjectSkeleton />
       ) : (
         <Projects projects={state.projects} />
       )}
