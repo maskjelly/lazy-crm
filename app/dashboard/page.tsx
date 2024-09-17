@@ -14,8 +14,6 @@ export default function HOME() {
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error'; isVisible: boolean }>({ message: '', type: 'success', isVisible: false });
   const { state, dispatch } = useProjectContext();
 
-
-
   async function fetchProjects() {
     setIsLoading(true);
     try {
@@ -61,7 +59,7 @@ export default function HOME() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="p-4 max-w-4xl mx-auto"
+      className="p-4 max-w-6xl mx-auto"
     >
       <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
       <form onSubmit={handleSubmit} className="mb-8">

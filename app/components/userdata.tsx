@@ -38,23 +38,27 @@ interface ProjectInfo {
   };
 }
 
-export const Projects = ({ projects }: { projects: ProjectInfo[] }) => {
+export const Projects = ({ 
+  projects
+}: { 
+  projects: ProjectInfo[]
+}) => {
   return (
     <Card title="Projects Dashboard">
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {projects.length === 0 ? (
-          <p className="text-accent">No projects found</p>
+          <p className="text-accent col-span-full">No projects found</p>
         ) : (
           projects.map((project, index) => (
             <Link key={index} href={`/projects/${encodeURIComponent(project.name)}`}>
               <motion.div 
-                className="border border-accent rounded-lg p-4 hover:bg-accent hover:bg-opacity-10 cursor-pointer transition-colors duration-200"
+                className="border border-accent rounded-lg p-4 hover:bg-accent hover:bg-opacity-10 cursor-pointer transition-colors duration-200 h-full"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.1 }}
               >
                 <h3 className="text-lg font-semibold mb-2">{project.name}</h3>
-                <div className="flex justify-between text-sm">
+                <div className="flex flex-col text-sm">
                   <span className="text-green-500">Done: {project.taskCounts.done}</span>
                   <span className="text-yellow-500">Working: {project.taskCounts.working}</span>
                   <span className="text-red-500">Upcoming: {project.taskCounts.upcoming}</span>
