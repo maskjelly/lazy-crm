@@ -61,18 +61,18 @@ export default function HOME() {
       transition={{ duration: 0.5 }}
       className="p-4 max-w-6xl mx-auto"
     >
-      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
-      <form onSubmit={handleSubmit} className="mb-8">
-        <div className="flex flex-col md:flex-row gap-4">
+      <h1 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">Dashboard</h1>
+      <form onSubmit={handleSubmit} className="mb-6 md:mb-8">
+        <div className="flex flex-col gap-3">
           <input
             type="text"
             placeholder="Project name"
             value={projectName}
             onChange={(e) => setProjectName(e.target.value)}
-            className="input flex-grow"
+            className="input w-full"
             disabled={isLoading}
           />
-          <button type="submit" className="btn btn-primary" disabled={isLoading}>
+          <button type="submit" className="btn btn-primary w-full" disabled={isLoading}>
             {isLoading ? 'Creating...' : 'Create Project'}
           </button>
         </div>
@@ -80,7 +80,7 @@ export default function HOME() {
 
       {isLoading ? (
         <div className="flex justify-center items-center h-40">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-accent"></div>
         </div>
       ) : (
         <Projects projects={state.projects} />
