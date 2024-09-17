@@ -6,37 +6,32 @@ import { getProjects } from "../action/getProject";
 import { Projects } from "../components/userdata";
 import { Notification } from "../components/Notification";
 import { motion } from "framer-motion";
-
-interface ProjectInfo {
-  name: string;
-  taskCounts: {
-    done: number;
-    working: number;
-    upcoming: number;
-  };
-}
+import { useProjectContext } from "../context/ProjectContext";
 
 export default function HOME() {
   const [projectName, setProjectName] = useState("");
-  const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error'; isVisible: boolean }>({ message: '', type: 'success', isVisible: false });
+  const { state, dispatch } = useProjectContext();
 
-  useEffect(() => {
-    fetchProjects();
-  }, []);
+
 
   async function fetchProjects() {
     setIsLoading(true);
     try {
       const fetchedProjects = await getProjects();
-      // Assuming getProjects now returns ProjectInfo[]
-      setProjects(fetchedProjects);
+      dispatch({ type: 'SET_PROJECTS', payload: fetchedProjects });
     } catch (error) {
+      console.error("Error fetching projects:", error);
       showNotification('Failed to fetch projects', 'error');
     }
     setIsLoading(false);
   }
+  useEffect(() => {
+    if (state.projects.length === 0 || Date.now() - (state.lastFetched || 0) > 5 * 60 * 1000) {
+      fetchProjects();
+    }
+  }, [state.projects, state.lastFetched]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -90,7 +85,7 @@ export default function HOME() {
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
         </div>
       ) : (
-        <Projects projects={projects} />
+        <Projects projects={state.projects} />
       )}
 
       <Notification {...notification} />
