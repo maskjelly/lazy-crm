@@ -9,28 +9,36 @@ import { motion } from "framer-motion";
 import { useProjectContext } from "../context/ProjectContext";
 import { ProjectsSkeleton } from "../components/Skeleton";
 
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+
 export default function HOME() {
   const [projectName, setProjectName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isFetching, setIsFetching] = useState(true); // Start with true
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error'; isVisible: boolean }>({ message: '', type: 'success', isVisible: false });
   const { state, dispatch } = useProjectContext();
 
-  async function fetchProjects() {
-    setIsFetching(true);
+  async function fetchProjects(forceRefresh = false) {
+    if (!forceRefresh && state.projects.length > 0 && state.lastFetched && Date.now() - state.lastFetched < CACHE_DURATION) {
+      // Use cached projects if they exist and are not expired
+      setIsInitialLoading(false);
+      return;
+    }
+
     try {
       const fetchedProjects = await getProjects();
       dispatch({ type: 'SET_PROJECTS', payload: fetchedProjects });
     } catch (error) {
       console.error("Error fetching projects:", error);
       showNotification('Failed to fetch projects', 'error');
+    } finally {
+      setIsInitialLoading(false);
     }
-    setIsFetching(false);
   }
 
   useEffect(() => {
-    fetchProjects(); // Always fetch on initial load
-  }, []); // Empty dependency array
+    fetchProjects();
+  }, []); // Empty dependency array to run only on mount
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -42,7 +50,7 @@ export default function HOME() {
     try {
       await ProjectMaker(projectName.trim());
       setProjectName("");
-      await fetchProjects();
+      await fetchProjects(true); // Force refresh projects after creating a new one
       showNotification('Project created successfully', 'success');
     } catch (error) {
       showNotification('Failed to create project', 'error');
@@ -79,7 +87,7 @@ export default function HOME() {
         </div>
       </form>
 
-      {isFetching ? (
+      {isInitialLoading ? (
         <ProjectsSkeleton />
       ) : (
         <Projects projects={state.projects} />

@@ -39,7 +39,7 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
           >
             <h2 className="text-xl font-bold mb-4">Delete Project</h2>
             <p className="mb-4">
-              Are you sure you want to delete the project &quot{projectName}&quot ? This action cannot be undone.
+              Are you sure you want to delete the project  `&rsquo;` {projectName} `&rsquo;`? This action cannot be undone.
             </p>
             <p className="mb-2">Please type the project name to confirm:</p>
             <input

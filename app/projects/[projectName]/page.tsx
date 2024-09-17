@@ -5,10 +5,14 @@ import { motion } from "framer-motion";
 import { Card } from "@/app/components/ui/card";
 import Link from "next/link";
 import { useProjectContext } from "@/app/context/ProjectContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DeleteConfirmationModal } from "@/app/components/DeleteConfirmationModal";
 import { deleteProject } from "@/app/action/deleteProject";
 import { Trash2, ChevronDown } from 'lucide-react';
+import { getProjects } from "@/app/action/getProject";
+import { ProjectsSkeleton } from "@/app/components/Skeleton";
+
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 const TaskColumn = ({ title, color }: { title: string; color: string }) => (
   <motion.div
@@ -31,15 +35,38 @@ export default function ProjectPage() {
   const { state, dispatch } = useProjectContext();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isComboboxOpen, setIsComboboxOpen] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   const project = state.projects.find(p => p.name === decodeURIComponent(projectName as string));
 
-  if (!project) {
+  async function fetchProjects(forceRefresh = false) {
+    if (!forceRefresh && state.projects.length > 0 && state.lastFetched && Date.now() - state.lastFetched < CACHE_DURATION) {
+      // Use cached projects if they exist and are not expired
+      setIsInitialLoading(false);
+      return;
+    }
+
+    try {
+      const fetchedProjects = await getProjects();
+      dispatch({ type: 'SET_PROJECTS', payload: fetchedProjects });
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+    } finally {
+      setIsInitialLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  if (!project && !isInitialLoading) {
     router.push('/dashboard');
     return null;
   }
 
   const handleDeleteProject = async () => {
+    if (!project) return; // Add this check
     try {
       await deleteProject(project.name);
       dispatch({ type: 'CLEAR_CACHE' });
@@ -53,6 +80,14 @@ export default function ProjectPage() {
     router.push(`/projects/${encodeURIComponent(newProjectName)}`);
     setIsComboboxOpen(false);
   };
+
+  if (isInitialLoading) {
+    return <ProjectsSkeleton />;
+  }
+
+  if (!project) {
+    return <div>Project not found</div>; // Add this check
+  }
 
   return (
     <div className="flex flex-col">
