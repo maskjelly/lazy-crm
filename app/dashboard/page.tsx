@@ -7,27 +7,12 @@ import { Projects } from "../components/userdata";
 import { Notification } from "../components/Notification";
 import { motion } from "framer-motion";
 import { useProjectContext } from "../context/ProjectContext";
-
-// Updated skeleton component for both mobile and desktop
-const ProjectSkeleton = () => (
-  <div className="animate-pulse space-y-4">
-    {[...Array(3)].map((_, index) => (
-      <div key={index} className="bg-accent bg-opacity-20 rounded-lg p-4">
-        <div className="h-5 bg-accent bg-opacity-30 rounded w-3/4 mb-2"></div>
-        <div className="space-y-2">
-          <div className="h-4 bg-accent bg-opacity-30 rounded w-1/4"></div>
-          <div className="h-4 bg-accent bg-opacity-30 rounded w-1/4"></div>
-          <div className="h-4 bg-accent bg-opacity-30 rounded w-1/4"></div>
-        </div>
-      </div>
-    ))}
-  </div>
-);
+import { ProjectsSkeleton } from "../components/Skeleton";
 
 export default function HOME() {
   const [projectName, setProjectName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isFetching, setIsFetching] = useState(false);
+  const [isFetching, setIsFetching] = useState(true); // Start with true
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error'; isVisible: boolean }>({ message: '', type: 'success', isVisible: false });
   const { state, dispatch } = useProjectContext();
 
@@ -44,10 +29,8 @@ export default function HOME() {
   }
 
   useEffect(() => {
-    if (state.projects.length === 0 || Date.now() - (state.lastFetched || 0) > 5 * 60 * 1000) {
-      fetchProjects();
-    }
-  }, [state.projects, state.lastFetched]);
+    fetchProjects(); // Always fetch on initial load
+  }, []); // Empty dependency array
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -97,7 +80,7 @@ export default function HOME() {
       </form>
 
       {isFetching ? (
-        <ProjectSkeleton />
+        <ProjectsSkeleton />
       ) : (
         <Projects projects={state.projects} />
       )}
