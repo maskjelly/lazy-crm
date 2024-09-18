@@ -1,31 +1,14 @@
 "use client";
 
 import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
-import { getProjects } from "@/app/action/getProject"; // Add this import
-import { TaskStatus } from '../types';
-
-interface TaskInfo {
-  id: number;
-  taskDetails: string;
-  taskUpdate: TaskStatus;
-  projectId: number;
-}
-
-interface ProjectInfo {
-  tasks: TaskInfo[];
-  id: number;
-  name: string;
-  taskCounts: {
-    done: number;
-    working: number;
-    upcoming: number;
-  };
-}
+import { getProjects } from "@/app/action/getProject";
+import { TaskStatus, TaskInfo, ProjectInfo } from '../types';
 
 interface ProjectState {
   projects: ProjectInfo[];
-  tasks: TaskInfo[];  // Add this line
+  tasks: TaskInfo[];
   lastFetched: number | null;
+  dataFetched: boolean;
 }
 
 type ProjectAction = 
@@ -56,8 +39,10 @@ const ProjectContext = createContext<{
 const projectReducer = (state: ProjectState, action: ProjectAction): ProjectState => {
   switch (action.type) {
     case 'SET_PROJECTS':
-      return { ...state, projects: action.payload, lastFetched: Date.now() };
+      console.log("Setting projects:", action.payload);
+      return { ...state, projects: action.payload, lastFetched: Date.now(), dataFetched: true };
     case 'SET_TASKS':
+      console.log("Setting tasks:", action.payload);
       return { ...state, tasks: action.payload };
     case 'UPDATE_TASK':
       return {
@@ -91,7 +76,7 @@ const projectReducer = (state: ProjectState, action: ProjectAction): ProjectStat
         )
       };
     case 'CLEAR_CACHE':
-      return { projects: [], tasks: [], lastFetched: null };
+      return { projects: [], tasks: [], lastFetched: null, dataFetched: false };
     case 'ADD_TASK':
       return {
         ...state,
@@ -143,7 +128,7 @@ const projectReducer = (state: ProjectState, action: ProjectAction): ProjectStat
 };
 
 export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [state, dispatch] = useReducer(projectReducer, { projects: [], tasks: [], lastFetched: null });
+  const [state, dispatch] = useReducer(projectReducer, { projects: [], tasks: [], lastFetched: null, dataFetched: false });
 
   useEffect(() => {
     async function fetchProjects() {

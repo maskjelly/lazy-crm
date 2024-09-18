@@ -1,7 +1,7 @@
 "use client";
 
 import { ProjectMaker } from "@/app/action/makeProject";
-import { useState, FormEvent, useEffect } from "react";
+import { useState, FormEvent, useEffect, useCallback } from "react";
 import { getProjects } from "../action/getProject";
 import { Projects } from "../components/userdata";
 import { Notification } from "../components/Notification";
@@ -18,13 +18,14 @@ export default function HOME() {
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error'; isVisible: boolean }>({ message: '', type: 'success', isVisible: false });
   const { state, dispatch } = useProjectContext();
 
-  async function fetchProjects(forceRefresh = false) {
+  const fetchProjects = useCallback(async (forceRefresh = false) => {
     if (!forceRefresh && state.projects.length > 0 && state.lastFetched && Date.now() - state.lastFetched < CACHE_DURATION) {
       setIsInitialLoading(false);
       return;
     }
 
     try {
+      setIsInitialLoading(true);
       const fetchedProjects = await getProjects();
       dispatch({ type: 'SET_PROJECTS', payload: fetchedProjects });
     } catch (error) {
@@ -33,11 +34,15 @@ export default function HOME() {
     } finally {
       setIsInitialLoading(false);
     }
-  }
+  }, [dispatch, state.projects.length, state.lastFetched]);
 
   useEffect(() => {
-    fetchProjects();
-  }, []);
+    if (state.projects.length === 0 || !state.lastFetched) {
+      fetchProjects();
+    } else {
+      setIsInitialLoading(false);
+    }
+  }, [fetchProjects, state.projects.length, state.lastFetched]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -61,6 +66,9 @@ export default function HOME() {
     setNotification({ message, type, isVisible: true });
     setTimeout(() => setNotification(prev => ({ ...prev, isVisible: false })), 3000);
   }
+
+  console.log("isInitialLoading:", isInitialLoading);
+  console.log("projects:", state.projects);
 
   return (
     <motion.div 

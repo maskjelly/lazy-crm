@@ -3,7 +3,7 @@
 import { getServerSession } from "next-auth";
 import prisma from "../db";
 import { NEXT_AUTH } from "../auth/auth";
-import { ProjectInfo, TaskInfo } from "../types";
+import { ProjectInfo, TaskStatus } from "../types";
 
 export async function getProjects(): Promise<ProjectInfo[]> {
   try {
@@ -30,6 +30,8 @@ export async function getProjects(): Promise<ProjectInfo[]> {
       },
     });
 
+    console.log("Fetched projects:", projects);
+
     return projects.map(project => ({
       id: project.id,
       name: project.name,
@@ -38,7 +40,12 @@ export async function getProjects(): Promise<ProjectInfo[]> {
         working: project.tasks.filter(task => task.taskUpdate === 'Working').length,
         upcoming: project.tasks.filter(task => task.taskUpdate === 'Pending').length,
       },
-      tasks: project.tasks as TaskInfo[],
+      tasks: project.tasks.map(task => ({
+        id: task.id,
+        taskDetails: task.taskDetails,
+        taskUpdate: task.taskUpdate as TaskStatus,
+        projectId: task.projectId,
+      })),
     }));
   } catch (error) {
     console.error("Error in getProjects:", error);

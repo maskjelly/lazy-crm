@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TaskStatus } from '@prisma/client';
+import { TaskStatus } from '@/app/types';
 
 interface AddTaskModalProps {
   isOpen: boolean;

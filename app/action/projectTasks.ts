@@ -1,8 +1,7 @@
 'use server';
 
 import prisma from "@/app/db";
-import { TaskStatus } from "@prisma/client";
-import { TaskInfo } from "@/app/types";
+import { TaskStatus, TaskInfo } from "@/app/types";
 
 export async function addTask(projectId: number, taskDetails: string, taskUpdate: TaskStatus): Promise<{ success: true; task: TaskInfo } | { success: false; error: string }> {
   try {
@@ -13,7 +12,15 @@ export async function addTask(projectId: number, taskDetails: string, taskUpdate
         projectId,
       },
     });
-    return { success: true, task: newTask };
+    return { 
+      success: true, 
+      task: {
+        id: newTask.id,
+        taskDetails: newTask.taskDetails,
+        taskUpdate: newTask.taskUpdate as TaskStatus,
+        projectId: newTask.projectId,
+      } 
+    };
   } catch (error) {
     console.error("Error adding task:", error);
     return { success: false, error: "Failed to add task." };

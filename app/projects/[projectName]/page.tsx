@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Card } from "@/app/components/ui/card";
 import Link from "next/link";
 import { useProjectContext } from "@/app/context/ProjectContext";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { DeleteConfirmationModal } from "@/app/components/DeleteConfirmationModal";
 import { deleteProject } from "@/app/action/deleteProject";
 import { getProjects } from "@/app/action/getProject";
@@ -116,7 +116,7 @@ export default function ProjectPage() {
   const project = state.projects.find(p => p.name === decodeURIComponent(projectName as string));
   const tasks = project ? state.tasks.filter(task => task.projectId === project.id) : [];
 
-  async function fetchProjects(forceRefresh = false) {
+  const fetchProjects = useCallback(async (forceRefresh = false) => {
     if (!forceRefresh && state.projects.length > 0 && state.lastFetched && Date.now() - state.lastFetched < CACHE_DURATION) {
       setIsInitialLoading(false);
       return;
@@ -133,29 +133,31 @@ export default function ProjectPage() {
     } finally {
       setIsInitialLoading(false);
     }
-  }
+  }, [dispatch, state.projects.length, state.lastFetched]);
 
   useEffect(() => {
-    fetchProjects(true);
+    if (state.projects.length === 0 || !state.lastFetched) {
+      fetchProjects(true);
+    } else {
+      setIsInitialLoading(false);
+    }
+  }, [fetchProjects, state.projects.length, state.lastFetched]);
 
-    // Suppress the defaultProps warning
-    const originalError = console.error;
-    console.error = (...args) => {
-      if (typeof args[0] === 'string' && args[0].includes('defaultProps')) {
-        return;
-      }
-      originalError.call(console, ...args);
-    };
+  // Add these console logs
+  console.log("isInitialLoading:", isInitialLoading);
+  console.log("project:", project);
+  console.log("tasks:", tasks);
 
-    // Restore the original console.error when the component unmounts
-    return () => {
-      console.error = originalError;
-    };
-  }, [fetchProjects]);
+  if (isInitialLoading) {
+    return <ProjectsSkeleton />;
+  }
 
-  if (!project && !isInitialLoading) {
-    router.push('/dashboard');
-    return null;
+  if (!project) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <p>Project not found. Redirecting to dashboard...</p>
+      </div>
+    );
   }
 
   const handleDeleteProject = async () => {
@@ -285,18 +287,6 @@ export default function ProjectPage() {
       });
     }
   };
-
-  if (isInitialLoading) {
-    return <ProjectsSkeleton />;
-  }
-
-  if (!project) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <p>Project not found. Redirecting to dashboard...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col min-h-screen">
