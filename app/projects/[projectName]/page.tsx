@@ -16,7 +16,7 @@ import { TaskInfo, TaskStatus } from "@/app/types";
 import { showNotification } from "@/app/utils/notifications";
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { updateTaskStatus } from "@/app/action/projectTasks";
-import { ChevronDown, PlusCircle, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, PlusCircle, Trash2 } from "lucide-react";
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
@@ -27,6 +27,7 @@ function TaskColumn({ title, color, status, tasks, onDeleteTask }: {
   tasks: TaskInfo[]; 
   onDeleteTask: (taskId: number) => void;
 }) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; taskId: number } | null>(null);
 
   const handleContextMenu = (e: React.MouseEvent, taskId: number) => {
@@ -45,36 +46,48 @@ function TaskColumn({ title, color, status, tasks, onDeleteTask }: {
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
+  const filteredTasks = tasks.filter(task => task.taskUpdate === status);
+
   return (
     <div className="flex-1">
       <Card title={title} className="h-full">
+        <div 
+          className="md:hidden flex justify-between items-center p-2 cursor-pointer"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+        >
+          <h3 className="font-semibold">{title} ({filteredTasks.length})</h3>
+          {isCollapsed ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+        </div>
         <Droppable droppableId={status}>
           {(provided, snapshot) => (
             <div 
               ref={provided.innerRef}
               {...provided.droppableProps}
-              className={`h-[calc(100vh-250px)] ${color} rounded-lg p-4 overflow-y-auto`}
+              className={`${color} rounded-lg p-4 overflow-y-auto transition-all duration-300 ease-in-out ${
+                isCollapsed ? 'h-0 md:min-h-[calc(100vh-250px)]' : 'min-h-[calc(100vh-250px)]'
+              }`}
+              style={{
+                maxHeight: isCollapsed ? '0' : `calc(100vh - 250px + ${Math.max(0, filteredTasks.length - 5) * 60}px)`,
+              }}
             >
-              {tasks
-                .filter(task => task.taskUpdate === status)
-                .map((task, index) => (
-                  <Draggable key={task.id.toString()} draggableId={task.id.toString()} index={index}>
-                    {(provided, snapshot) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...provided.dragHandleProps}
-                        className={`mb-2 p-3 bg-black rounded shadow hover:shadow-md transition-shadow ${
-                          snapshot.isDragging ? 'opacity-50' : ''
-                        }`}
-                        onContextMenu={(e) => handleContextMenu(e, task.id)}
-                      >
-                        <p className="text-sm font-medium break-words text-white">{task.taskDetails}</p>
-                      </div>
-                    )}
-                  </Draggable>
-                ))}
-              {snapshot.isDraggingOver && (
+              {!isCollapsed && filteredTasks.map((task, index) => (
+                <Draggable key={task.id.toString()} draggableId={task.id.toString()} index={index}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      {...provided.dragHandleProps}
+                      className={`mb-2 p-3 bg-black rounded shadow hover:shadow-md transition-shadow ${
+                        snapshot.isDragging ? 'opacity-50' : ''
+                      }`}
+                      onContextMenu={(e) => handleContextMenu(e, task.id)}
+                    >
+                      <p className="text-sm font-medium break-words text-white">{task.taskDetails}</p>
+                    </div>
+                  )}
+                </Draggable>
+              ))}
+              {!isCollapsed && snapshot.isDraggingOver && (
                 <div className="h-16 border-2 border-dashed border-gray-400 rounded-lg mb-2"></div>
               )}
               {provided.placeholder}
