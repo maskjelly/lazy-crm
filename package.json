@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node server.js",
     "postinstall": "npx prisma generate",
-    "build": "NEXT_PUBLIC_ESLINT_IGNORE=true next build",
+    "build": "NEXT_PUBLIC_ESLINT_IGNORE=t:wruerue next build",
     "start": "NODE_ENV=production node server.js",
     "lint": "next lint"
   },
@@ -20,7 +20,8 @@
     "react": "^18",
     "react-dom": "^18",
     "react-router-dom": "^6.26.2",
-    "react-tabs": "^6.0.2"
+    "react-tabs": "^6.0.2",
+    "socket.io-client": "^4.7.5"
   },
   "devDependencies": {
     "@types/node": "^20",
