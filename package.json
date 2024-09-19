@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node server.js",
     "postinstall": "npx prisma generate",
     "build": "NEXT_PUBLIC_ESLINT_IGNORE=true next build",
-    "start": "next start",
+    "start": "NODE_ENV=production node server.js",
     "lint": "next lint"
   },
   "dependencies": {
@@ -19,7 +19,8 @@
     "next-auth": "^4.24.7",
     "react": "^18",
     "react-dom": "^18",
-    "react-router-dom": "^6.26.2"
+    "react-router-dom": "^6.26.2",
+    "react-tabs": "^6.0.2"
   },
   "devDependencies": {
     "@types/node": "^20",

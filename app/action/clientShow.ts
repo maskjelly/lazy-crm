@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import prisma from "../db";
 import { NEXT_AUTH } from "../auth/auth";
 
-export async function getProjects(lancerid : string) {
+export async function getProjects(lancerid: string) {
   const session = await getServerSession(NEXT_AUTH);
   if (!session || !session.user?.email) {
     throw new Error("No active session found");
@@ -18,9 +18,9 @@ export async function getProjects(lancerid : string) {
     throw new Error("User not found");
   }
 
-  const projects = await prisma.projects.findMany({
+  const projects = await prisma.project.findMany({
     where: {
-      userID: user.id,
+      ownerId: user.id,
     },
     select: {
       name: true,

@@ -26,9 +26,9 @@ export default async function ProjectList() {
     return <div>No user data found. Please check your email.</div>;
   }
 
-  const projectsPromise = prisma.projects.findMany({
+  const projectsPromise = prisma.project.findMany({
     where: {
-      userID: user.id,
+      ownerId: user.id,
     },
   });
 

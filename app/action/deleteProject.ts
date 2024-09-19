@@ -21,10 +21,10 @@ export async function deleteProject(projectName: string) {
     throw new Error("User not found");
   }
 
-  await prisma.projects.deleteMany({
+  await prisma.project.deleteMany({
     where: {
       name: projectName,
-      userID: user.id,
+      ownerId: user.id,
     },
   });
 }

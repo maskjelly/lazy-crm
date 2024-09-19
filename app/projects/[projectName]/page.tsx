@@ -14,21 +14,26 @@ import { addTask, deleteTask } from "@/app/action/projectTasks";
 import { AddTaskModal } from "@/app/components/AddTaskModal";
 import { TaskInfo, TaskStatus } from "@/app/types";
 import { showNotification } from "@/app/utils/notifications";
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { updateTaskStatus } from "@/app/action/projectTasks";
-import { ChevronDown, ChevronUp, PlusCircle, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Loader2, Trash2 } from "lucide-react";
+import { InviteCollaborator } from '@/app/components/InviteCollaborator';
+import { useSocket } from '@/app/context/SocketContext';
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
-function TaskColumn({ title, color, status, tasks, onDeleteTask }: { 
+function TaskColumn({ title, color, status, tasks, onDeleteTask, onAddTask }: { 
   title: string; 
   color: string; 
   status: TaskStatus; 
   tasks: TaskInfo[]; 
   onDeleteTask: (taskId: number) => void;
+  onAddTask: (taskDetails: string, status: TaskStatus) => void;
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; taskId: number } | null>(null);
+  const [newTaskDetails, setNewTaskDetails] = useState('');
+  const [isAddingTask, setIsAddingTask] = useState(false);
 
   const handleContextMenu = (e: React.MouseEvent, taskId: number) => {
     e.preventDefault();
@@ -45,6 +50,16 @@ function TaskColumn({ title, color, status, tasks, onDeleteTask }: {
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
+
+  const handleAddTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newTaskDetails.trim()) {
+      setIsAddingTask(true);
+      await onAddTask(newTaskDetails, status);
+      setNewTaskDetails('');
+      setIsAddingTask(false);
+    }
+  };
 
   const filteredTasks = tasks.filter(task => task.taskUpdate === status);
 
@@ -70,6 +85,29 @@ function TaskColumn({ title, color, status, tasks, onDeleteTask }: {
                 maxHeight: isCollapsed ? '0' : `calc(100vh - 250px + ${Math.max(0, filteredTasks.length - 5) * 60}px)`,
               }}
             >
+              {/* Add Task Form */}
+              <form onSubmit={handleAddTask} className="mb-4 flex items-center">
+                <input
+                  type="text"
+                  value={newTaskDetails}
+                  onChange={(e) => setNewTaskDetails(e.target.value)}
+                  placeholder={`Add a task to ${title}`}
+                  className="flex-grow p-2 rounded-l border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-transparent"
+                />
+                <button 
+                  type="submit" 
+                  className="p-2 bg-blue-500 text-white rounded-r hover:bg-blue-600 transition-colors flex items-center justify-center"
+                  disabled={isAddingTask}
+                >
+                  {isAddingTask ? (
+                    <Loader2 className="animate-spin" size={20} />
+                  ) : (
+                    <Plus size={20} />
+                  )}
+                </button>
+              </form>
+
+              {/* Existing Tasks */}
               {!isCollapsed && filteredTasks.map((task, index) => (
                 <Draggable key={task.id.toString()} draggableId={task.id.toString()} index={index}>
                   {(provided, snapshot) => (
@@ -77,8 +115,8 @@ function TaskColumn({ title, color, status, tasks, onDeleteTask }: {
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
-                      className={`mb-2 p-3 bg-black rounded shadow hover:shadow-md transition-shadow ${
-                        snapshot.isDragging ? 'opacity-50' : ''
+                      className={`mb-2 p-3 bg-black rounded shadow hover:shadow-md transition-all duration-300 ease-in-out ${
+                        snapshot.isDragging ? 'opacity-50 scale-105' : ''
                       }`}
                       onContextMenu={(e) => handleContextMenu(e, task.id)}
                     >
@@ -87,8 +125,8 @@ function TaskColumn({ title, color, status, tasks, onDeleteTask }: {
                   )}
                 </Draggable>
               ))}
-              {!isCollapsed && snapshot.isDraggingOver && (
-                <div className="h-16 border-2 border-dashed border-gray-400 rounded-lg mb-2"></div>
+              {snapshot.isDraggingOver && (
+                <div className="h-16 bg-accent bg-opacity-20 border-2 border-dashed border-accent rounded mb-2 transition-all duration-200"></div>
               )}
               {provided.placeholder}
             </div>
@@ -103,11 +141,11 @@ function TaskColumn({ title, color, status, tasks, onDeleteTask }: {
             left: contextMenu.x,
             zIndex: 1000,
           }}
-          className="bg-white shadow-md rounded-md py-2 px-4"
+          className="bg-white shadow-md rounded-md overflow-hidden"
         >
           <button
             onClick={() => handleDeleteTask(contextMenu.taskId)}
-            className="text-red-500 hover:text-red-700"
+            className="block w-full text-left px-4 py-2 hover:bg-gray-100"
           >
             Delete Task
           </button>
@@ -126,6 +164,7 @@ export default function ProjectPage() {
   const [isComboboxOpen, setIsComboboxOpen] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
+  const { socket } = useSocket();
 
   const project = state.projects.find(p => p.name === decodeURIComponent(projectName));
   const tasks = project ? state.tasks.filter(task => task.projectId === project.id) : [];
@@ -156,6 +195,43 @@ export default function ProjectPage() {
       setIsInitialLoading(false);
     }
   }, [fetchProjects, state.projects.length, state.lastFetched]);
+
+  useEffect(() => {
+    if (socket && project) {
+      socket.emit('joinProject', project.id);
+
+      const handleTaskAdded = (newTask: TaskInfo) => {
+        if (!tasks.some(task => task.id === newTask.id)) {
+          dispatch({ type: 'ADD_TASK', payload: newTask });
+        }
+      };
+
+      const handleTaskUpdated = (updatedTask: TaskInfo) => {
+        dispatch({ type: 'UPDATE_TASK', payload: updatedTask });
+      };
+
+      const handleTaskDeleted = (deletedTaskId: number) => {
+        dispatch({ type: 'REMOVE_TASK', payload: deletedTaskId });
+        const deletedTask = tasks.find(task => task.id === deletedTaskId);
+        if (deletedTask) {
+          dispatch({
+            type: 'UPDATE_PROJECT_TASK_COUNTS',
+            payload: { projectId: project.id, oldStatus: deletedTask.taskUpdate, newStatus: null }
+          });
+        }
+      };
+
+      socket.on('taskAdded', handleTaskAdded);
+      socket.on('taskUpdated', handleTaskUpdated);
+      socket.on('taskDeleted', handleTaskDeleted);
+
+      return () => {
+        socket.off('taskAdded', handleTaskAdded);
+        socket.off('taskUpdated', handleTaskUpdated);
+        socket.off('taskDeleted', handleTaskDeleted);
+      };
+    }
+  }, [socket, project, dispatch, tasks]);
 
   // Add these console logs
   console.log("isInitialLoading:", isInitialLoading);
@@ -192,33 +268,11 @@ export default function ProjectPage() {
 
   const handleAddTask = async (taskDetails: string, taskStatus: TaskStatus) => {
     if (!project) return;
-    
-    // Optimistically update local state
-    const tempTaskId = Date.now();
-    dispatch({
-      type: 'ADD_TASK',
-      payload: { id: tempTaskId, taskDetails, taskUpdate: taskStatus, projectId: project.id }
-    });
-    dispatch({
-      type: 'UPDATE_PROJECT_TASK_COUNTS',
-      payload: { projectId: project.id, oldStatus: null, newStatus: taskStatus }
-    });
-
-    const response = await addTask(project.id, taskDetails, taskStatus);
-    if (response.success && 'task' in response) {
-      setIsAddTaskModalOpen(false);
-      showNotification('Task added successfully', 'success');
-      dispatch({
-        type: 'UPDATE_TASK_ID',
-        payload: { tempId: tempTaskId, realId: response.task.id }
-      });
+    const result = await addTask(project.id, taskDetails, taskStatus);
+    if (result.success && 'task' in result) {
+      socket?.emit('taskAdded', result.task);
     } else {
-      showNotification(response.error || 'Failed to add task', 'error');
-      dispatch({ type: 'REMOVE_TASK', payload: tempTaskId });
-      dispatch({
-        type: 'UPDATE_PROJECT_TASK_COUNTS',
-        payload: { projectId: project.id, oldStatus: taskStatus, newStatus: null }
-      });
+      showNotification('Failed to add task', 'error');
     }
   };
 
@@ -236,27 +290,25 @@ export default function ProjectPage() {
       return;
     }
 
-    dispatch({ type: 'REMOVE_TASK', payload: taskId });
-    dispatch({
-      type: 'UPDATE_PROJECT_TASK_COUNTS',
-      payload: { projectId: project.id, oldStatus: taskToDelete.taskUpdate, newStatus: null }
-    });
-
     try {
       await deleteTask(taskId);
+      // Emit the socket event before updating the local state
+      socket?.emit('taskDeleted', { taskId, projectId: project.id });
+      
+      // Update local state
+      dispatch({ type: 'REMOVE_TASK', payload: taskId });
+      dispatch({
+        type: 'UPDATE_PROJECT_TASK_COUNTS',
+        payload: { projectId: project.id, oldStatus: taskToDelete.taskUpdate, newStatus: null }
+      });
       showNotification('Task deleted successfully', 'success');
     } catch (error) {
       console.error("Failed to delete task:", error);
       showNotification('Failed to delete task', 'error');
-      dispatch({ type: 'ADD_TASK', payload: taskToDelete });
-      dispatch({
-        type: 'UPDATE_PROJECT_TASK_COUNTS',
-        payload: { projectId: project.id, oldStatus: null, newStatus: taskToDelete.taskUpdate }
-      });
     }
   };
 
-  const onDragEnd = async (result: { destination: any; source: any; draggableId: any; }) => {
+  const onDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId } = result;
 
     if (!destination) {
@@ -274,30 +326,32 @@ export default function ProjectPage() {
     const newStatus = destination.droppableId as TaskStatus;
     const oldStatus = source.droppableId as TaskStatus;
 
-    // Immediately update the UI
+    // Optimistically update the UI
+    const updatedTasks = [...tasks];
+    const [reorderedTask] = updatedTasks.splice(updatedTasks.findIndex(task => task.id === taskId), 1);
+    reorderedTask.taskUpdate = newStatus;
+    updatedTasks.splice(destination.index, 0, reorderedTask);
+
     dispatch({
-      type: 'UPDATE_TASK',
-      payload: { taskId, newStatus }
+      type: 'SET_TASKS',
+      payload: updatedTasks
     });
 
     try {
-      await updateTaskStatus(taskId, newStatus);
+      const updatedTask = await updateTaskStatus(taskId, newStatus);
       dispatch({
         type: 'UPDATE_PROJECT_TASK_COUNTS',
         payload: { projectId: project!.id, oldStatus, newStatus }
       });
+      socket?.emit('taskUpdated', { ...updatedTask, projectId: project!.id });
     } catch (error) {
       console.error("Failed to update task status:", error);
       showNotification('Failed to update task status', 'error');
       
       // Revert the changes in case of failure
       dispatch({
-        type: 'UPDATE_TASK',
-        payload: { taskId, newStatus: oldStatus }
-      });
-      dispatch({
-        type: 'UPDATE_PROJECT_TASK_COUNTS',
-        payload: { projectId: project!.id, oldStatus: newStatus, newStatus: oldStatus }
+        type: 'SET_TASKS',
+        payload: tasks
       });
     }
   };
@@ -362,7 +416,7 @@ export default function ProjectPage() {
               onClick={() => setIsAddTaskModalOpen(true)}
               className="btn btn-primary flex items-center justify-center w-full md:w-auto"
             >
-              <PlusCircle size={18} className="mr-2" />
+              <Plus size={18} className="mr-2" />
               Add Task
             </button>
             <button
@@ -382,6 +436,7 @@ export default function ProjectPage() {
               status="Completed" 
               tasks={tasks}
               onDeleteTask={handleDeleteTask}
+              onAddTask={handleAddTask}
             />
             <TaskColumn 
               title="Working" 
@@ -389,6 +444,7 @@ export default function ProjectPage() {
               status="Working" 
               tasks={tasks}
               onDeleteTask={handleDeleteTask}
+              onAddTask={handleAddTask}
             />
             <TaskColumn 
               title="Upcoming" 
@@ -396,6 +452,7 @@ export default function ProjectPage() {
               status="Pending" 
               tasks={tasks}
               onDeleteTask={handleDeleteTask}
+              onAddTask={handleAddTask}
             />
           </div>
         </DragDropContext>
@@ -412,6 +469,8 @@ export default function ProjectPage() {
         onClose={() => setShowDeleteModal(false)}
         onConfirm={handleDeleteProject}
       />
+
+      {project.isOwner && <InviteCollaborator projectId={project.id} />}
     </div>
   );
 }

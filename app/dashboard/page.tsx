@@ -1,48 +1,23 @@
 "use client";
 
 import { ProjectMaker } from "@/app/action/makeProject";
-import { useState, FormEvent, useEffect, useCallback } from "react";
+import { useState, FormEvent } from "react";
 import { getProjects } from "../action/getProject";
+import { fetchInvitations } from "../action/invitations";
 import { Projects } from "../components/userdata";
 import { Notification } from "../components/Notification";
 import { motion } from "framer-motion";
 import { useProjectContext } from "../context/ProjectContext";
 import { ProjectsSkeleton } from "../components/Skeleton";
-
-const CACHE_DURATION = 5 * 60 * 1000;
+import { InvitationsTab } from '../components/InvitationsTab';
+import { Tabs, TabList, Tab, TabPanel } from 'react-tabs';
+import 'react-tabs/style/react-tabs.css'; // You might need to install react-tabs: npm install react-tabs
 
 export default function HOME() {
   const [projectName, setProjectName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error'; isVisible: boolean }>({ message: '', type: 'success', isVisible: false });
   const { state, dispatch } = useProjectContext();
-
-  const fetchProjects = useCallback(async (forceRefresh = false) => {
-    if (!forceRefresh && state.projects.length > 0 && state.lastFetched && Date.now() - state.lastFetched < CACHE_DURATION) {
-      setIsInitialLoading(false);
-      return;
-    }
-
-    try {
-      setIsInitialLoading(true);
-      const fetchedProjects = await getProjects();
-      dispatch({ type: 'SET_PROJECTS', payload: fetchedProjects });
-    } catch (error) {
-      console.error("Error fetching projects:", error);
-      showNotification('Failed to fetch projects', 'error');
-    } finally {
-      setIsInitialLoading(false);
-    }
-  }, [dispatch, state.projects.length, state.lastFetched]);
-
-  useEffect(() => {
-    if (state.projects.length === 0 || !state.lastFetched) {
-      fetchProjects();
-    } else {
-      setIsInitialLoading(false);
-    }
-  }, [fetchProjects, state.projects.length, state.lastFetched]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -54,7 +29,7 @@ export default function HOME() {
     try {
       await ProjectMaker(projectName.trim());
       setProjectName("");
-      await fetchProjects(true);
+      await refreshData();
       showNotification('Project created successfully', 'success');
     } catch (error) {
       showNotification('Failed to create project', 'error');
@@ -62,13 +37,30 @@ export default function HOME() {
     setIsLoading(false);
   }
 
+  async function refreshData() {
+    setIsLoading(true);
+    try {
+      const [fetchedProjects, fetchedInvitations] = await Promise.all([
+        getProjects(),
+        fetchInvitations()
+      ]);
+      dispatch({ type: 'SET_PROJECTS', payload: fetchedProjects });
+      dispatch({ type: 'SET_INVITATIONS', payload: fetchedInvitations });
+      const allTasks = fetchedProjects.flatMap(project => project.tasks);
+      dispatch({ type: 'SET_TASKS', payload: allTasks });
+      showNotification('Data refreshed successfully', 'success');
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+      showNotification('Failed to refresh data', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   function showNotification(message: string, type: 'success' | 'error') {
     setNotification({ message, type, isVisible: true });
     setTimeout(() => setNotification(prev => ({ ...prev, isVisible: false })), 3000);
   }
-
-  console.log("isInitialLoading:", isInitialLoading);
-  console.log("projects:", state.projects);
 
   return (
     <motion.div 
@@ -94,11 +86,26 @@ export default function HOME() {
         </div>
       </form>
 
-      {isInitialLoading ? (
-        <ProjectsSkeleton />
-      ) : (
-        <Projects projects={state.projects} />
-      )}
+      <button onClick={refreshData} className="btn btn-secondary mb-4" disabled={isLoading}>
+        {isLoading ? 'Refreshing...' : 'Refresh Data'}
+      </button>
+
+      <Tabs>
+        <TabList>
+          <Tab>Projects</Tab>
+          <Tab>Invitations</Tab>
+        </TabList>
+        <TabPanel>
+          {!state.dataFetched ? (
+            <ProjectsSkeleton />
+          ) : (
+            <Projects projects={state.projects} />
+          )}
+        </TabPanel>
+        <TabPanel>
+          <InvitationsTab />
+        </TabPanel>
+      </Tabs>
 
       <Notification {...notification} />
     </motion.div>

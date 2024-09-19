@@ -9,35 +9,60 @@ datasource db {
 }
 
 model User {
-  id       String     @id @default(uuid()) // Change id to String and generate UUID by default
-  email    String     @unique
-  name     String
-  image    String?    // Nullable, added to store the Google profile image
-  projects Projects[]
-}
-model Client {
-  id     Int     @id @default(autoincrement())
-  email String @unique
-  
-}
-model Projects {
-  id     Int     @id @default(autoincrement())
-  name   String
-  userID String
-  User   User    @relation(fields: [userID], references: [id])
-  tasks  Tasks[]
+  id                  String       @id @default(uuid())
+  email               String       @unique
+  name                String
+  image               String?
+  projects            Project[]    @relation("UserProjects")
+  collaborations      Project[]    @relation("ProjectCollaborators")
+  sentInvitations     Invitation[] @relation("SentInvitations")
+  receivedInvitations Invitation[] @relation("ReceivedInvitations")
+  tasks               Task[]
 }
 
-model Tasks {
-  id          Int        @id @default(autoincrement())
-  taskDetails String
-  User        Projects   @relation(fields: [taskId], references: [id])
-  taskId      Int
-  taskUpdate  TaskStatus
+model Project {
+  id            Int          @id @default(autoincrement())
+  name          String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  owner         User         @relation("UserProjects", fields: [ownerId], references: [id])
+  ownerId       String
+  collaborators User[]       @relation("ProjectCollaborators")
+  tasks         Task[]
+  invitations   Invitation[]
+}
+
+model Task {
+  id           Int        @id @default(autoincrement())
+  taskDetails  String
+  taskUpdate   TaskStatus
+  project      Project    @relation(fields: [projectId], references: [id])
+  projectId    Int
+  createdBy    User       @relation(fields: [createdById], references: [id])
+  createdById  String
+}
+
+model Invitation {
+  id         Int              @id @default(autoincrement())
+  project    Project          @relation(fields: [projectId], references: [id])
+  projectId  Int
+  sender     User             @relation("SentInvitations", fields: [senderId], references: [id])
+  senderId   String
+  receiver   User             @relation("ReceivedInvitations", fields: [receiverId], references: [id])
+  receiverId String
+  status     InvitationStatus
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
 }
 
 enum TaskStatus {
   Completed
   Working
   Pending
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
 }

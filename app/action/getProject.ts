@@ -14,6 +14,14 @@ export async function getProjects(): Promise<ProjectInfo[]> {
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
+      include: {
+        projects: {
+          include: { tasks: true, collaborators: true }
+        },
+        collaborations: {
+          include: { tasks: true, collaborators: true }
+        }
+      }
     });
 
     if (!user) {
@@ -21,20 +29,12 @@ export async function getProjects(): Promise<ProjectInfo[]> {
       return [];
     }
 
-    const projects = await prisma.projects.findMany({
-      where: {
-        userID: user.id,
-      },
-      include: {
-        tasks: true,
-      },
-    });
+    const allProjects = [...user.projects, ...user.collaborations];
 
-    console.log("Fetched projects:", projects);
-
-    return projects.map(project => ({
+    return allProjects.map(project => ({
       id: project.id,
       name: project.name,
+      isOwner: project.ownerId === user.id,
       taskCounts: {
         done: project.tasks.filter(task => task.taskUpdate === 'Completed').length,
         working: project.tasks.filter(task => task.taskUpdate === 'Working').length,
@@ -45,6 +45,11 @@ export async function getProjects(): Promise<ProjectInfo[]> {
         taskDetails: task.taskDetails,
         taskUpdate: task.taskUpdate as TaskStatus,
         projectId: task.projectId,
+      })),
+      collaborators: project.collaborators.map(collaborator => ({
+        id: collaborator.id,
+        name: collaborator.name,
+        email: collaborator.email,
       })),
     }));
   } catch (error) {

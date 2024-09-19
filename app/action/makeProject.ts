@@ -21,10 +21,10 @@ export async function ProjectMaker(projectName: string) {
     throw new Error("User not found");
   }
  
-  await prisma.projects.create({
+  await prisma.project.create({
     data: {
       name: projectName,
-      User: {
+      owner: {
         connect: {
           id: user.id, 
         },
