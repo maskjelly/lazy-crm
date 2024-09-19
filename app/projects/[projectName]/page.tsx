@@ -105,7 +105,8 @@ function TaskColumn({ title, color, status, tasks, onDeleteTask }: {
 }
 
 export default function ProjectPage() {
-  const { projectName } = useParams();
+  const params = useParams();
+  const projectName = params?.projectName as string;
   const router = useRouter();
   const { state, dispatch } = useProjectContext();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -113,7 +114,7 @@ export default function ProjectPage() {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
 
-  const project = state.projects.find(p => p.name === decodeURIComponent(projectName as string));
+  const project = state.projects.find(p => p.name === decodeURIComponent(projectName));
   const tasks = project ? state.tasks.filter(task => task.projectId === project.id) : [];
 
   const fetchProjects = useCallback(async (forceRefresh = false) => {
