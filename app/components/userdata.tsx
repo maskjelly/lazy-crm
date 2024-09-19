@@ -49,23 +49,46 @@ export const Projects = ({
         {projects.length === 0 ? (
           <p className="text-accent">No projects found</p>
         ) : (
-          projects.map((project, index) => (
-            <Link key={index} href={`/projects/${encodeURIComponent(project.name)}`}>
-              <motion.div 
-                className="border border-accent rounded-lg p-3 md:p-4 hover:bg-accent hover:bg-opacity-10 cursor-pointer transition-colors duration-200"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.1 }}
-              >
-                <h3 className="text-base md:text-lg font-semibold mb-2">{project.name}</h3>
-                <div className="flex flex-col text-xs md:text-sm">
-                  <span className="text-green-500">Done: {project.taskCounts.done}</span>
-                  <span className="text-yellow-500">Working: {project.taskCounts.working}</span>
-                  <span className="text-red-500">Upcoming: {project.taskCounts.upcoming}</span>
-                </div>
-              </motion.div>
-            </Link>
-          ))
+          projects.map((project, index) => {
+            const totalTasks = project.taskCounts.done + project.taskCounts.working + project.taskCounts.upcoming;
+            const donePercentage = totalTasks > 0 ? (project.taskCounts.done / totalTasks) * 100 : 0;
+            const workingPercentage = totalTasks > 0 ? (project.taskCounts.working / totalTasks) * 100 : 0;
+            const upcomingPercentage = totalTasks > 0 ? (project.taskCounts.upcoming / totalTasks) * 100 : 0;
+
+            return (
+              <Link key={index} href={`/projects/${encodeURIComponent(project.name)}`}>
+                <motion.div 
+                  className="border border-accent rounded-lg p-3 md:p-4 hover:bg-accent hover:bg-opacity-10 cursor-pointer transition-colors duration-200"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.1 }}
+                >
+                  <h3 className="text-base md:text-lg font-semibold mb-2">{project.name}</h3>
+                  <div className="flex flex-col text-xs md:text-sm mb-2">
+                    <span className="text-green-500">Done: {project.taskCounts.done}</span>
+                    <span className="text-yellow-500">Working: {project.taskCounts.working}</span>
+                    <span className="text-red-500">Upcoming: {project.taskCounts.upcoming}</span>
+                  </div>
+                  <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-full flex">
+                      <div 
+                        className="bg-green-500" 
+                        style={{ width: `${donePercentage}%` }}
+                      />
+                      <div 
+                        className="bg-yellow-500" 
+                        style={{ width: `${workingPercentage}%` }}
+                      />
+                      <div 
+                        className="bg-red-500" 
+                        style={{ width: `${upcomingPercentage}%` }}
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              </Link>
+            );
+          })
         )}
       </div>
     </Card>
