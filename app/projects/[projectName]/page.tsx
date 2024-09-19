@@ -16,7 +16,7 @@ import { TaskInfo, TaskStatus } from "@/app/types";
 import { showNotification } from "@/app/utils/notifications";
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { updateTaskStatus } from "@/app/action/projectTasks";
-import { ChevronDown, ChevronUp, Plus, Loader2, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Loader2, Trash2, PlusCircle } from "lucide-react";
 import { InviteCollaborator } from '@/app/components/InviteCollaborator';
 import { useSocket } from '@/app/context/SocketContext';
 
@@ -86,25 +86,27 @@ function TaskColumn({ title, color, status, tasks, onDeleteTask, onAddTask }: {
               }}
             >
               {/* Add Task Form */}
-              <form onSubmit={handleAddTask} className="mb-4 flex items-center">
-                <input
-                  type="text"
-                  value={newTaskDetails}
-                  onChange={(e) => setNewTaskDetails(e.target.value)}
-                  placeholder={`Add a task to ${title}`}
-                  className="flex-grow p-2 rounded-l border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-transparent"
-                />
-                <button 
-                  type="submit" 
-                  className="p-2 bg-blue-500 text-white rounded-r hover:bg-blue-600 transition-colors flex items-center justify-center"
-                  disabled={isAddingTask}
-                >
-                  {isAddingTask ? (
-                    <Loader2 className="animate-spin" size={20} />
-                  ) : (
-                    <Plus size={20} />
-                  )}
-                </button>
+              <form onSubmit={handleAddTask} className="mb-4">
+                <div className="flex items-center bg-white bg-opacity-10 rounded-lg overflow-hidden">
+                  <input
+                    type="text"
+                    value={newTaskDetails}
+                    onChange={(e) => setNewTaskDetails(e.target.value)}
+                    placeholder={`Add a task to ${title}`}
+                    className="flex-grow p-2 bg-transparent border-none focus:outline-none text-sm"
+                  />
+                  <button 
+                    type="submit" 
+                    className="p-2 text-white hover:bg-white hover:bg-opacity-20 transition-colors"
+                    disabled={isAddingTask}
+                  >
+                    {isAddingTask ? (
+                      <Loader2 className="animate-spin" size={20} />
+                    ) : (
+                      <PlusCircle size={20} />
+                    )}
+                  </button>
+                </div>
               </form>
 
               {/* Existing Tasks */}
