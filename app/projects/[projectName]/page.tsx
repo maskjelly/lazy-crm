@@ -203,14 +203,17 @@ export default function ProjectPage() {
       socket.emit('joinProject', project.id);
 
       socket.on('taskAdded', (newTask: TaskInfo) => {
+        console.log('Task added:', newTask);
         dispatch({ type: 'ADD_TASK', payload: newTask });
       });
 
       socket.on('taskUpdated', (updatedTask: TaskInfo) => {
+        console.log('Task updated:', updatedTask);
         dispatch({ type: 'UPDATE_TASK', payload: updatedTask });
       });
 
       socket.on('taskDeleted', (deletedTaskId: number) => {
+        console.log('Task deleted:', deletedTaskId);
         dispatch({ type: 'REMOVE_TASK', payload: deletedTaskId });
       });
 
@@ -259,7 +262,15 @@ export default function ProjectPage() {
     if (!project) return;
     const result = await addTask(project.id, taskDetails, taskStatus);
     if (result.success && 'task' in result) {
+      // Emit the socket event before updating the local state
       socket?.emit('taskAdded', result.task);
+      
+      // Update local state
+      dispatch({ type: 'ADD_TASK', payload: result.task });
+      dispatch({
+        type: 'UPDATE_PROJECT_TASK_COUNTS',
+        payload: { projectId: project.id, oldStatus: null, newStatus: result.task.taskUpdate }
+      });
     } else {
       showNotification('Failed to add task', 'error');
     }

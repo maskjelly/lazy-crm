@@ -29,14 +29,14 @@ app.prepare().then(() => {
       console.log(`User joined project-${projectId}`);
     });
 
-    socket.on('taskUpdated', (data) => {
-      console.log('Task updated:', data);
-      io.to(`project-${data.projectId}`).emit('taskUpdated', data);
-    });
-
     socket.on('taskAdded', (data) => {
       console.log('Task added:', data);
       io.to(`project-${data.projectId}`).emit('taskAdded', data);
+    });
+
+    socket.on('taskUpdated', (data) => {
+      console.log('Task updated:', data);
+      io.to(`project-${data.projectId}`).emit('taskUpdated', data);
     });
 
     socket.on('taskDeleted', (data) => {
@@ -44,14 +44,7 @@ app.prepare().then(() => {
       io.to(`project-${data.projectId}`).emit('taskDeleted', data.taskId);
     });
 
-    socket.on('projectUpdated', (data) => {
-      console.log('Project updated:', data);
-      io.to(`project-${data.projectId}`).emit('projectUpdated', data);
-    });
-
-    socket.on('disconnect', () => {
-      console.log('A user disconnected');
-    });
+    // ... other event handlers ...
   });
 
   const port = process.env.PORT || 3000;
