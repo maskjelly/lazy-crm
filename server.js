@@ -13,7 +13,13 @@ app.prepare().then(() => {
     handle(req, res, parsedUrl);
   });
 
-  const io = new Server(server);
+  const io = new Server(server, {
+    path: '/api/socketio',
+    cors: {
+      origin: process.env.CLIENT_URL || "http://localhost:3000",
+      methods: ["GET", "POST"]
+    }
+  });
 
   io.on('connection', (socket) => {
     console.log('A user connected');
@@ -29,6 +35,7 @@ app.prepare().then(() => {
     });
 
     socket.on('taskAdded', (data) => {
+      console.log('Task added:', data);
       io.to(`project-${data.projectId}`).emit('taskAdded', data);
     });
 
@@ -38,6 +45,7 @@ app.prepare().then(() => {
     });
 
     socket.on('projectUpdated', (data) => {
+      console.log('Project updated:', data);
       io.to(`project-${data.projectId}`).emit('projectUpdated', data);
     });
 
@@ -46,8 +54,9 @@ app.prepare().then(() => {
     });
   });
 
-  server.listen(3000, (err) => {
+  const port = process.env.PORT || 3000;
+  server.listen(port, (err) => {
     if (err) throw err;
-    console.log('> Ready on http://localhost:3000');
+    console.log(`> Ready on http://localhost:${port}`);
   });
 });

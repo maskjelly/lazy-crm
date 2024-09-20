@@ -15,7 +15,9 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    const newSocket = io();
+    const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL || '', {
+      path: '/api/socketio',
+    });
     setSocket(newSocket);
 
     newSocket.on('connect', () => {

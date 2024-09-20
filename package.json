@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node server.js",
     "postinstall": "npx prisma generate",
-    "build": "NEXT_PUBLIC_ESLINT_IGNORE=t:wruerue next build",
+    "build": "next build",
     "start": "NODE_ENV=production node server.js",
     "lint": "next lint"
   },

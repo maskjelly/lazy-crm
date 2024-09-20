@@ -6,7 +6,9 @@ import { getServerSession } from "next-auth";
 import { NEXT_AUTH } from "@/app/auth/auth";
 import { io } from 'socket.io-client';
 
-const socket = io();
+const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || '', {
+  path: '/api/socketio',
+});
 
 export async function addTask(projectId: number, taskDetails: string, taskUpdate: TaskStatus): Promise<{ success: true; task: TaskInfo } | { success: false; error: string }> {
   try {
@@ -39,7 +41,7 @@ export async function addTask(projectId: number, taskDetails: string, taskUpdate
       projectId: newTask.projectId,
     };
 
-    // Don't emit the socket event here, let the client handle it
+    socket.emit('taskAdded', taskInfo);
 
     return { success: true, task: taskInfo };
   } catch (error) {
@@ -77,6 +79,8 @@ export async function deleteTask(taskId: number) {
       where: { id: taskId },
       include: { project: true },
     });
+    
+    socket.emit('taskDeleted', { taskId: deletedTask.id, projectId: deletedTask.projectId });
     
     return { success: true, taskId: deletedTask.id, projectId: deletedTask.projectId };
   } catch (error) {

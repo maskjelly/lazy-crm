@@ -202,38 +202,25 @@ export default function ProjectPage() {
     if (socket && project) {
       socket.emit('joinProject', project.id);
 
-      const handleTaskAdded = (newTask: TaskInfo) => {
-        if (!tasks.some(task => task.id === newTask.id)) {
-          dispatch({ type: 'ADD_TASK', payload: newTask });
-        }
-      };
+      socket.on('taskAdded', (newTask: TaskInfo) => {
+        dispatch({ type: 'ADD_TASK', payload: newTask });
+      });
 
-      const handleTaskUpdated = (updatedTask: TaskInfo) => {
+      socket.on('taskUpdated', (updatedTask: TaskInfo) => {
         dispatch({ type: 'UPDATE_TASK', payload: updatedTask });
-      };
+      });
 
-      const handleTaskDeleted = (deletedTaskId: number) => {
+      socket.on('taskDeleted', (deletedTaskId: number) => {
         dispatch({ type: 'REMOVE_TASK', payload: deletedTaskId });
-        const deletedTask = tasks.find(task => task.id === deletedTaskId);
-        if (deletedTask) {
-          dispatch({
-            type: 'UPDATE_PROJECT_TASK_COUNTS',
-            payload: { projectId: project.id, oldStatus: deletedTask.taskUpdate, newStatus: null }
-          });
-        }
-      };
-
-      socket.on('taskAdded', handleTaskAdded);
-      socket.on('taskUpdated', handleTaskUpdated);
-      socket.on('taskDeleted', handleTaskDeleted);
+      });
 
       return () => {
-        socket.off('taskAdded', handleTaskAdded);
-        socket.off('taskUpdated', handleTaskUpdated);
-        socket.off('taskDeleted', handleTaskDeleted);
+        socket.off('taskAdded');
+        socket.off('taskUpdated');
+        socket.off('taskDeleted');
       };
     }
-  }, [socket, project, dispatch, tasks]);
+  }, [socket, project, dispatch]);
 
   // Add these console logs
   console.log("isInitialLoading:", isInitialLoading);
